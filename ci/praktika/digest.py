@@ -75,6 +75,7 @@ class Digest:
             "requires",
             "enable_commit_status",
             "allow_merge_on_failure",
+            "digest_config",  # already used for file-based digest calculation
         ]
         filtered_job_dict = {
             k: v for k, v in job_config_dict.items() if k not in drop_fields
@@ -93,8 +94,11 @@ class Digest:
         print(f"DEBUG: config_digest for job [{job_config.name}]")
         print(f"  filtered_job_dict keys: {sorted(filtered_job_dict.keys())}")
         for k, v in filtered_job_dict.items():
-            if isinstance(v, (dict, list)) and len(str(v)) > 100:
+            if isinstance(v, dict):
+                print(f"    {k}: {type(v).__name__} = {json.dumps(v, sort_keys=True)}")
+            elif isinstance(v, list) and len(str(v)) > 100:
                 print(f"    {k}: {type(v).__name__} (length={len(v)})")
+                print(f"      JSON: {json.dumps(v, sort_keys=True)}")
             else:
                 print(f"    {k}: {v}")
 
