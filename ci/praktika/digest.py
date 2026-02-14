@@ -83,14 +83,30 @@ class Digest:
         job_provides_artifact_configs = []
         for a in job_config.provides:
             if a in artifact_configs:
-                job_provides_artifact_configs.append(
-                    dataclasses.asdict(artifact_configs[a])
-                )
+                artifact_dict = dataclasses.asdict(artifact_configs[a])
+                # exclude ext field as it may contain non-deterministic data
+                artifact_dict.pop("ext", None)
+                job_provides_artifact_configs.append(artifact_dict)
+                print(f"  DEBUG: artifact [{a}] dict keys: {sorted(artifact_dict.keys())}")
         filtered_job_dict["provides"] = job_provides_artifact_configs
 
-        config_digest = hashlib.md5(
-            json.dumps(filtered_job_dict, sort_keys=True).encode()
-        ).hexdigest()[: min(Settings.CACHE_DIGEST_LEN // 4, 4)]
+        print(f"DEBUG: config_digest for job [{job_config.name}]")
+        print(f"  filtered_job_dict keys: {sorted(filtered_job_dict.keys())}")
+        for k, v in filtered_job_dict.items():
+            if isinstance(v, (dict, list)) and len(str(v)) > 100:
+                print(f"    {k}: {type(v).__name__} (length={len(v)})")
+            else:
+                print(f"    {k}: {v}")
+
+        json_str = json.dumps(filtered_job_dict, sort_keys=True)
+        print(f"  JSON length: {len(json_str)}")
+        print(f"  JSON (first 500 chars): {json_str[:500]}")
+        print(f"  JSON (last 500 chars): {json_str[-500:]}")
+
+        config_digest = hashlib.md5(json_str.encode()).hexdigest()[
+            : min(Settings.CACHE_DIGEST_LEN // 4, 4)
+        ]
+        print(f"  config_digest: {config_digest}")
         return digest + "-" + config_digest
 
     def calc_docker_digest(
